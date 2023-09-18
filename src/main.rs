@@ -1,6 +1,7 @@
 use std::fs::read_dir;
 use std::io;
 use crate::model_test_kub::Login;
+use crate::model_test_kub::test_mod::{GradeResult, Speaking};
 
 mod model_test_kub;
 
@@ -20,12 +21,11 @@ fn main() {
     io::stdin().read_line(&mut password).expect("Failed to read line");
     let password = password.trim().to_string();
 
-    let login_data = Login {
-        username: username.clone(),
-        password: password.clone(),
-    };
+    let login_data = Login::new(username, password);
 
-    print!("hello {} password {} " ,login_data.username , login_data.password);
+    print!("hello {} password {} ", login_data.get_username(), login_data.get_password());
+
+    login_data.speak();
 
     if a > b { println!("Hello, world! B {}", b); } else if a == b { println!("Hello, world! A {} B {}", a, b); } else { println!("Hello, world! A {} ", a); }
     println!("{:?}", fn_test(a, b, "x"));
@@ -35,13 +35,12 @@ fn main() {
             println!("{:?}", entry);
         }
     }
-    
+
     'loop1: for i in 0..10 {
         println!("i {}", i);
-        for j in 0..10  {
+        for j in 0..10 {
             println!("j {}", j);
-            if j==2 { break 'loop1;}
-
+            if j == 2 { break 'loop1; }
         }
     }
 
@@ -51,12 +50,17 @@ fn main() {
     // hello2(test);
     let test_z = &test;
     hello2(test_z);
-    println!("{}",test)
+    println!("{}", test);
 
-
-
-
-
+    let mut str = enum_test(1);
+    println!("{:?}", str);
+    str = enum_test(2);
+    println!("{:?}", str);
+    let z = enum_test(1);
+    match z {
+        GradeResult::Value(v) => println!("{}", v),
+        GradeResult::Error(e) => println!("{}", e),
+    }
 }
 
 fn fn_test(a: i32, b: i32, operation: &str) -> (i32, i32) {
@@ -69,13 +73,25 @@ fn fn_test(a: i32, b: i32, operation: &str) -> (i32, i32) {
     return (answer, answer);
 }
 
-fn hello(name:&mut String){
-    *name= String::from("fdsfsf");
+fn hello(name: &mut String) {
+    *name = String::from("fdsfsf");
     println!("hello {}", name);
 }
 
-fn hello2(name:&String){
+fn hello2(name: &String) {
     println!("hello2 {}", name);
 }
 
 
+fn enum_test(a: i32) -> GradeResult {
+    if a == 1 {
+        return GradeResult::Error("mai hai pen one wa".to_string());
+    }
+    return GradeResult::Value("OK BRO".to_string());
+}
+
+impl Speaking for Login {
+    fn speak(&self) {
+        println!("SPEAK {}", self.get_username())
+    }
+}
