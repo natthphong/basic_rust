@@ -1,6 +1,7 @@
-pub mod test_mod;
+pub mod interface;
 
-
+pub mod entity;
+pub mod request;
 pub struct Login {
    username: String,
    password: String,
