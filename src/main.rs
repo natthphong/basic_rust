@@ -5,7 +5,7 @@
 use std::fs::read_dir;
 
 use std::io;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use axum::body::{ HttpBody};
 
 use axum::response::{IntoResponse};
@@ -13,6 +13,7 @@ use axum::{Json, Router};
 use axum::http::{HeaderValue, Method};
 use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::routing::{get, post};
+use redis::{Commands, Connection};
 use sqlx::{PgPool, Pool, Postgres, Row};
 use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::CorsLayer;
@@ -22,13 +23,23 @@ use crate::model::interface::{GradeResult, Speaking};
 
 mod model;
 mod handler;
+pub mod redis_func;
 
 pub struct AppConfig {
-    pool:Pool<Postgres>
+    pool:Pool<Postgres>,
+    redis: Mutex<Connection>,
+}
+impl AppConfig {
+    pub fn get_redis(&self) -> &Mutex<Connection> {
+        &self.redis
+    }
 }
 
 #[tokio::main]
 async  fn main() {
+
+    let client = redis::Client::open("redis://127.0.0.1:6379").unwrap();
+    let mut con: Connection = client.get_connection().unwrap();
 
     let pool = match PgPoolOptions::new()
         .max_connections(10)
@@ -45,13 +56,13 @@ async  fn main() {
         }
     };
 
-    let cors = CorsLayer::new()
-        .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
-        .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
-        .allow_credentials(true)
-        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
+    // let cors = CorsLayer::new()
+    //     .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
+    //     .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
+    //     .allow_credentials(true)
+    //     .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
 
-   let state  =  Arc::new(AppConfig{pool:pool.clone()});
+   let state  =  Arc::new(AppConfig{pool:pool.clone(),redis: Mutex::from(con) });
     let app = Router::new()
         .route("/", get(user_handler::health_checker_handler))
         .route("/api", get(user_handler::health_checker_handler))

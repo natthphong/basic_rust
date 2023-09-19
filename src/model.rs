@@ -2,6 +2,8 @@ pub mod interface;
 
 pub mod entity;
 pub mod request;
+
+pub mod response;
 pub struct Login {
    username: String,
    password: String,
