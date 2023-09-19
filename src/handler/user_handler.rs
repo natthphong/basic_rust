@@ -184,11 +184,11 @@ pub async fn update_customer_handler(
     Json(body): Json<CreateCustomerRequest>,
 ) -> impl IntoResponse {
     let result = query("   UPDATE customer_info set  age = $1 , email = $2, password=$3 , username=$4  where id = $5 ")
-        .bind(body.age)
-        .bind(body.email)
-        .bind(body.password)
-        .bind(body.username)
-        .bind(body.id.unwrap())
+        .bind(&body.age)
+        .bind(&body.email)
+        .bind(&body.password)
+        .bind(&body.username)
+        .bind(&body.id.unwrap())
         .execute(&data.pool)
         .await;
     return match result {
@@ -197,6 +197,8 @@ pub async fn update_customer_handler(
                 "status": "success",
                 "message": "success"
             });
+            let mut redis_lock = data.get_redis().lock().unwrap();
+            let _: () = redis_lock.hset("customer", &body.id, to_value(&body).unwrap().to_string()).unwrap();
             Json(json_response).into_response()
         }
         Err(e) => {
@@ -214,9 +216,8 @@ pub async fn delete_customer_handler(
     State(data): State<Arc<AppConfig>>,
     Path(id): Path<i32>,
 ) -> impl IntoResponse {
-    print!(";f;f;");
     let result = query("   delete from  customer_info  where id = $1 ")
-        .bind(id)
+        .bind(&id)
         .execute(&data.pool)
         .await;
     return match result {
@@ -225,6 +226,8 @@ pub async fn delete_customer_handler(
                 "status": "success",
                 "message": "success"
             });
+            let mut redis_lock = data.get_redis().lock().unwrap();
+            let _: () = redis_lock.hdel("customer",&id).unwrap();
             Json(json_response).into_response()
         }
         Err(e) => {
