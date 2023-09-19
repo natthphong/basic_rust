@@ -24,4 +24,8 @@ impl CustomerInfo {
         }
     }
 
+    pub fn get_id(&self)->&i64{
+        return &self.id;
+    }
+
 }
